@@ -1,15 +1,25 @@
 use crate::{
     config::Config,
-    models::{location::Location, station::Station},
+    models::{location::Location, reading::Reading, station::Station},
 };
 use anyhow::Result;
+use chrono::{serde::ts_seconds, DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
 pub struct DBRepository {
     pool: Pool<Postgres>,
 }
 
-pub struct DBError;
+pub struct StationRecord {
+    pub id: i32,
+    pub uid: String,
+    pub token: String,
+    pub hw_version: i32,
+    pub sw_version: i32,
+    pub location_id: Option<i32>,
+    pub last_online: DateTime<Utc>,
+}
 
 impl DBRepository {
     pub fn new(config: Config) -> Self {
@@ -17,7 +27,8 @@ impl DBRepository {
     }
 
     pub async fn get_station(&self, token: String) -> Result<Station> {
-        let rec = sqlx::query!(
+        let rec = sqlx::query_as!(
+            StationRecord,
             r#"
             SELECT * FROM stations 
             WHERE token = $1
@@ -27,22 +38,13 @@ impl DBRepository {
         .fetch_one(&self.pool)
         .await?;
 
-        let location_id = rec.location_id;
-        let location = match location_id {
+        let location = match rec.location_id {
             Some(id) => Some(self.get_location(id).await?),
             None => None,
         };
 
-        let station = Station {
-            id: rec.id,
-            uid: rec.uid,
-            token: rec.token,
-            hw_version: rec.hw_version,
-            sw_version: rec.sw_version,
-            last_online: rec.last_online,
-            location,
-            location_id,
-        };
+        let mut station = Station::from(rec);
+        station.location = location;
 
         Ok(station)
     }
@@ -110,7 +112,8 @@ impl DBRepository {
     }
 
     pub async fn get_location(&self, location_id: i32) -> Result<Location> {
-        let rec = sqlx::query!(
+        let rec = sqlx::query_as!(
+            Location,
             r#"
         SELECT * FROM locations
         WHERE id = $1
@@ -120,19 +123,7 @@ impl DBRepository {
         .fetch_one(&self.pool)
         .await?;
 
-        let location = Location {
-            id: rec.id,
-            station_token: rec.station_token,
-            latitude: rec.latitude,
-            longitude: rec.longitude,
-            country: rec.country,
-            province: rec.province,
-            city: rec.city,
-            street: rec.street,
-            number: rec.number,
-        };
-
-        Ok(location)
+        Ok(rec)
     }
 
     pub async fn put_location(&self, location: &Location) -> Result<i32> {
@@ -150,6 +141,67 @@ impl DBRepository {
             location.city,
             location.street,
             location.number
+        ).fetch_one(&self.pool).await?;
+
+        Ok(rec.id)
+    }
+
+    pub async fn get_readings_between(
+        &self,
+        station: Station,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<Reading>> {
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE station_id = $1
+        AND date BETWEEN $2 AND $3
+        "#,
+            station.id,
+            start,
+            end
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn get_latest_reading(&self, station: Station) -> Result<Reading> {
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE station_id = $1
+        ORDER BY date DESC
+        LIMIT 1
+        "#,
+            station.id,
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn put_reading(&self, reading: Reading) -> Result<i32> {
+        let rec = sqlx::query!(
+            r#"
+        INSERT INTO readings (station_id, location_id, date, temperature, humidity, pm10, pm25, co2, voc)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
+        "#,
+            reading.station_id,
+            reading.location_id,
+            reading.date,
+            reading.temperature,
+            reading.humidity,
+            reading.pm10,
+            reading.pm25,
+            reading.co2,
+            reading.voc
         ).fetch_one(&self.pool).await?;
 
         Ok(rec.id)

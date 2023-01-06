@@ -2,7 +2,10 @@ use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::api::station::{AddStationRequest, UpdateStationRequest};
+use crate::{
+    api::station::{AddStationRequest, UpdateStationRequest},
+    repository::db::StationRecord,
+};
 
 use super::location::Location;
 
@@ -69,5 +72,20 @@ impl From<AddStationRequest> for Station {
         }
 
         station
+    }
+}
+
+impl From<StationRecord> for Station {
+    fn from(rec: StationRecord) -> Self {
+        Station {
+            id: rec.id,
+            uid: rec.uid,
+            token: rec.token,
+            hw_version: rec.hw_version,
+            sw_version: rec.sw_version,
+            location_id: rec.location_id,
+            location: None,
+            last_online: rec.last_online,
+        }
     }
 }
