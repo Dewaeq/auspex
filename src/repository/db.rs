@@ -3,8 +3,7 @@ use crate::{
     models::{location::Location, station::Station},
 };
 use anyhow::Result;
-use chrono::{DateTime, Utc};
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 
 pub struct DBRepository {
     pool: Pool<Postgres>,
@@ -50,7 +49,7 @@ impl DBRepository {
 
     pub async fn put_station(&self, mut station: Station) -> Result<i32> {
         if let Some(location) = station.location {
-            let id = self.put_location(location).await?;
+            let id = self.put_location(&location).await?;
             station.location_id = Some(id);
         }
 
@@ -70,6 +69,44 @@ impl DBRepository {
         .await?;
 
         Ok(rec.id)
+    }
+
+    pub async fn update_station(&self, station: &Station) -> Result<()> {
+        sqlx::query!(
+            r#"
+        UPDATE stations
+        SET hw_version = $1,
+            sw_version = $2,
+            location_id = $3,
+            last_online = $4
+        WHERE id = $5
+        "#,
+            station.hw_version,
+            station.sw_version,
+            station.location_id,
+            station.last_online,
+            station.id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_location_id(&self, location_id: i32, token: String) -> Result<()> {
+        sqlx::query!(
+            r#"
+        UPDATE stations
+        SET location_id = $1
+        WHERE token = $2
+        "#,
+            location_id,
+            token,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 
     pub async fn get_location(&self, location_id: i32) -> Result<Location> {
@@ -98,7 +135,7 @@ impl DBRepository {
         Ok(location)
     }
 
-    pub async fn put_location(&self, location: Location) -> Result<i32> {
+    pub async fn put_location(&self, location: &Location) -> Result<i32> {
         let rec = sqlx::query!(
             r#"
         INSERT INTO locations (station_token, latitude, longitude, country, province, city, street, number)

@@ -2,7 +2,7 @@ use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::api::station::AddStationRequest;
+use crate::api::station::{AddStationRequest, UpdateStationRequest};
 
 use super::location::Location;
 
@@ -27,6 +27,18 @@ impl Station {
         station.sw_version = sw_version;
 
         station
+    }
+
+    pub fn apply_update(&mut self, update: UpdateStationRequest) {
+        if let Some(hw_version) = update.hw_version {
+            self.hw_version = hw_version;
+        }
+        if let Some(sw_version) = update.sw_version {
+            self.hw_version = sw_version;
+        }
+        if let Some(last_online) = update.last_online {
+            self.last_online = last_online;
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 use actix_web::{middleware::Logger, web::Data, App, HttpServer};
-use auspex::api::{station::add_station, station::get_station};
+use auspex::api::station::update_location;
+use auspex::api::{station::add_station, station::get_station, station::update_station};
 use auspex::{config::Config, repository::db::DBRepository};
 
 #[actix_web::main]
@@ -20,6 +21,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(db_data)
             .service(add_station)
             .service(get_station)
+            .service(update_station)
+            .service(update_location)
     })
     .bind(("127.0.0.1", 80))?
     .run()
