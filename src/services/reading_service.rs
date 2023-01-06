@@ -30,6 +30,10 @@ impl ReadingService {
         self.db.get_latest_reading(station).await
     }
 
+    pub async fn get_past_hour_readings(&self) -> Result<Vec<Reading>> {
+        self.db.get_past_hour_readings().await
+    }
+
     pub async fn put_reading(&self, request: AddReadingRequest) -> Result<i32> {
         let station = self.db.get_station(request.station_token.clone()).await?;
         let mut reading = Reading::from(request);

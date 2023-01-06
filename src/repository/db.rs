@@ -186,6 +186,20 @@ impl DBRepository {
         Ok(rec)
     }
 
+    pub async fn get_past_hour_readings(&self) -> Result<Vec<Reading>> {
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE date >= (NOW() - INTERVAL '1 hour')
+        "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
     pub async fn put_reading(&self, reading: Reading) -> Result<i32> {
         let rec = sqlx::query!(
             r#"
