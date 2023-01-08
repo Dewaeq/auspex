@@ -30,7 +30,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_readings_between)
             .service(add_reading)
     })
-    .bind(("127.0.0.1", 80))?
+    .bind(("192.168.0.190", 80))?
     .run()
     .await
 }

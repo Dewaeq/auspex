@@ -35,7 +35,10 @@ impl ReadingService {
     }
 
     pub async fn put_reading(&self, request: AddReadingRequest) -> Result<i32> {
-        let station = self.db.get_station(request.station_token.clone()).await?;
+        let mut station = self.db.get_station(request.station_token.clone()).await?;
+        station.last_online = Utc::now();
+        self.db.update_station(&station).await?;
+
         let mut reading = Reading::from(request);
         reading.station_id = station.id;
         reading.location_id = station.location_id;
