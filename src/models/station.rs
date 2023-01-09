@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     api::station::{AddStationRequest, UpdateStationRequest},
-    repository::db::StationRecord,
+    repository::queries::station::StationRecord,
 };
 
 use super::location::Location;

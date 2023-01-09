@@ -48,6 +48,6 @@ impl ReadingService {
         reading.station_id = station.id;
         reading.location_id = station.location_id;
 
-        self.db.put_reading(reading).await
+        self.db.put_reading(&reading).await
     }
 }
