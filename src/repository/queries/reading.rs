@@ -100,6 +100,6 @@ impl Query {
             reading.voc
         ).fetch_one(&self.pool).await?;
 
-        todo!()
+        Ok(rec)
     }
 }
