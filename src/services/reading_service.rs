@@ -31,7 +31,7 @@ impl ReadingService {
     }
 
     pub async fn get_past_hour_readings(&self) -> Result<Vec<Reading>> {
-        self.db.get_past_hour_readings().await
+        self.db.get_past_hour_readings(1).await
     }
 
     /// Get every reading from the past 5 minutes, across all stations

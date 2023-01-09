@@ -186,13 +186,15 @@ impl DBRepository {
         Ok(rec)
     }
 
-    pub async fn get_past_hour_readings(&self) -> Result<Vec<Reading>> {
+    pub async fn get_past_hour_readings(&self, hours: impl Into<i64>) -> Result<Vec<Reading>> {
+        let date = Utc::now() - Duration::hours(hours.into());
         let rec = sqlx::query_as!(
             Reading,
             r#"
         SELECT * FROM readings
-        WHERE date >= (NOW() - INTERVAL '1 hour')
-        "#
+        WHERE date >= $1
+        "#,
+            date
         )
         .fetch_all(&self.pool)
         .await?;
@@ -211,7 +213,7 @@ impl DBRepository {
             SELECT MAX(date), station_id FROM readings GROUP BY station_id
         )
         "#,
-        date
+            date
         )
         .fetch_all(&self.pool)
         .await?;
