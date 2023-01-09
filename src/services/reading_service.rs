@@ -34,6 +34,11 @@ impl ReadingService {
         self.db.get_past_hour_readings().await
     }
 
+    /// Get every reading from the past 5 minutes, across all stations
+    pub async fn get_past_minute_readings(&self) -> Result<Vec<Reading>> {
+        self.db.get_past_minutes_readings(5).await
+    }
+
     pub async fn put_reading(&self, request: AddReadingRequest) -> Result<i32> {
         let mut station = self.db.get_station(request.station_token.clone()).await?;
         station.last_online = Utc::now();

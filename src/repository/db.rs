@@ -3,7 +3,7 @@ use crate::{
     models::{location::Location, reading::Reading, station::Station},
 };
 use anyhow::Result;
-use chrono::{serde::ts_seconds, DateTime, Utc};
+use chrono::{serde::ts_seconds, DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
@@ -193,6 +193,25 @@ impl DBRepository {
         SELECT * FROM readings
         WHERE date >= (NOW() - INTERVAL '1 hour')
         "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn get_past_minutes_readings(&self, minutes: impl Into<i64>) -> Result<Vec<Reading>> {
+        let date = Utc::now() - Duration::minutes(minutes.into());
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE date >= $1
+        AND (date, station_id) IN (
+            SELECT MAX(date), station_id FROM readings GROUP BY station_id
+        )
+        "#,
+        date
         )
         .fetch_all(&self.pool)
         .await?;

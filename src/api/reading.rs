@@ -76,6 +76,18 @@ pub async fn get_past_hour_readings(db: Data<DBRepository>) -> HttpResponse {
     }
 }
 
+#[get("/reading/all/past_minutes")]
+pub async fn get_past_minutes_readings(db: Data<DBRepository>) -> HttpResponse {
+    let service = ReadingService::new(db);
+    let result = service.get_past_minute_readings().await;
+
+    if result.is_ok() {
+        HttpResponse::Ok().json(result.unwrap())
+    } else {
+        HttpResponse::InternalServerError().finish()
+    }
+}
+
 #[put("/reading/{station_token}/new")]
 pub async fn add_reading(db: Data<DBRepository>, body: Json<AddReadingRequest>) -> HttpResponse {
     let service = ReadingService::new(db);
