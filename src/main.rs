@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web::Data, App, HttpServer};
 use auspex::api::reading::{
     add_reading, get_latest_reading, get_past_hour_readings, get_past_minutes_readings,
@@ -15,11 +16,13 @@ async fn main() -> std::io::Result<()> {
     let config = Config::new().await;
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
         let logger = Logger::default();
         let db_repo = DBRepository::new(config.clone());
         let db_data = Data::new(db_repo);
 
         App::new()
+            .wrap(cors)
             .wrap(logger)
             .app_data(db_data)
             .service(add_station)
