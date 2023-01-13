@@ -1,3 +1,5 @@
+use std::iter::Sum;
+
 use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +18,22 @@ pub struct Reading {
     pub pm25: f32,
     pub co2: f32,
     pub voc: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AverageReadingValues {
+    pub temperature: f32,
+    pub humidity: f32,
+    pub pm10: f32,
+    pub pm25: f32,
+    pub co2: f32,
+    pub voc: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AverageReading {
+    pub hour: AverageReadingValues,
+    pub day: AverageReadingValues,
 }
 
 impl Reading {
@@ -58,6 +76,55 @@ impl From<AddReadingRequest> for Reading {
             pm25: request.pm25,
             co2: request.co2,
             voc: request.voc,
+        }
+    }
+}
+
+impl AverageReading {
+    pub fn new(hour_readings: Vec<Reading>, day_readings: Vec<Reading>) -> Self {
+        let mut hour = AverageReadingValues::new(hour_readings);
+        let mut day = AverageReadingValues::new(day_readings);
+
+        AverageReading { hour, day }
+    }
+}
+
+impl AverageReadingValues {
+    pub fn new(values: Vec<Reading>) -> Self {
+        let mut result = AverageReadingValues::default();
+
+        for val in &values {
+            result.temperature += val.temperature;
+            result.humidity += val.humidity;
+            result.pm10 += val.pm10;
+            result.pm25 += val.pm25;
+            result.co2 += val.co2;
+            result.voc += val.co2;
+        }
+
+        if !values.is_empty() {
+            let size = values.len() as f32;
+            result.temperature /= size;
+            result.humidity /= size;
+            result.pm10 /= size;
+            result.pm25 /= size;
+            result.co2 /= size;
+            result.voc /= size;
+        }
+
+        result
+    }
+}
+
+impl Default for AverageReadingValues {
+    fn default() -> Self {
+        AverageReadingValues {
+            temperature: 0.0,
+            humidity: 0.0,
+            pm10: 0.0,
+            pm25: 0.0,
+            co2: 0.0,
+            voc: 0.0,
         }
     }
 }

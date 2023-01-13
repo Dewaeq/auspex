@@ -3,7 +3,9 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 
 use crate::{
-    api::reading::AddReadingRequest, models::reading::Reading, repository::db::DBRepository,
+    api::reading::AddReadingRequest,
+    models::reading::{AverageReading, Reading},
+    repository::db::DBRepository,
 };
 
 pub struct ReadingService {
@@ -21,13 +23,18 @@ impl ReadingService {
         start: DateTime<Utc>,
         end: DateTime<Utc>,
     ) -> Result<Vec<Reading>> {
-        let station = self.db.get_station(token).await?;
+        let station = self.db.get_station(token, false).await?;
         self.db.get_readings_between(station, start, end).await
     }
 
     pub async fn get_latest_reading(&self, token: String) -> Result<Reading> {
-        let station = self.db.get_station(token).await?;
+        let station = self.db.get_station(token, false).await?;
         self.db.get_latest_reading(station).await
+    }
+
+    pub async fn get_average_reading(&self, token: String) -> Result<AverageReading> {
+        let station = self.db.get_station(token, false).await?;
+        self.db.get_average_reading(station).await
     }
 
     pub async fn get_past_hour_readings(&self) -> Result<Vec<Reading>> {
@@ -40,7 +47,10 @@ impl ReadingService {
     }
 
     pub async fn put_reading(&self, request: AddReadingRequest) -> Result<i32> {
-        let mut station = self.db.get_station(request.station_token.clone()).await?;
+        let mut station = self
+            .db
+            .get_station(request.station_token.clone(), false)
+            .await?;
         station.last_online = Utc::now();
         self.db.update_station(&station).await?;
 

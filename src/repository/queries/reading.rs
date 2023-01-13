@@ -1,5 +1,8 @@
-use crate::{models::reading::Reading, repository::query::Query};
-use anyhow::Result;
+use crate::{
+    models::reading::{AverageReading, Reading},
+    repository::query::Query,
+};
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Duration, Utc};
 
 pub struct PutReadingRequest {
@@ -43,6 +46,14 @@ impl Query {
         )
         .fetch_one(&self.pool)
         .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn get_average_reading(&self, station_id: i32) -> Result<AverageReading> {
+        let hour_readings = self.get_past_hour_readings(1).await?;
+        let day_readings = self.get_past_hour_readings(24).await?;
+        let rec = AverageReading::new(hour_readings, day_readings);
 
         Ok(rec)
     }

@@ -1,6 +1,10 @@
 use crate::{
     config::Config,
-    models::{location::Location, reading::Reading, station::Station},
+    models::{
+        location::Location,
+        reading::{AverageReading, Reading},
+        station::Station,
+    },
 };
 use anyhow::Result;
 use chrono::{serde::ts_seconds, DateTime, Duration, Utc};
@@ -22,12 +26,12 @@ impl DBRepository {
         }
     }
 
-    pub async fn get_station(&self, token: String) -> Result<Station> {
+    pub async fn get_station(&self, token: String, include_location: bool) -> Result<Station> {
         let rec = self.query.get_station(token).await?;
 
         let location = match rec.location_id {
-            Some(id) => Some(self.get_location(id).await?),
-            None => None,
+            Some(id) if include_location => Some(self.get_location(id).await?),
+            _ => None,
         };
 
         let mut station = Station::from(rec);
@@ -87,6 +91,12 @@ impl DBRepository {
 
     pub async fn get_latest_reading(&self, station: Station) -> Result<Reading> {
         let rec = self.query.get_latest_reading(station.id).await?;
+
+        Ok(rec)
+    }
+
+    pub async fn get_average_reading(&self, station: Station) -> Result<AverageReading> {
+        let rec = self.query.get_average_reading(station.id).await?;
 
         Ok(rec)
     }

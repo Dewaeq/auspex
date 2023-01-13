@@ -1,8 +1,8 @@
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web::Data, App, HttpServer};
 use auspex::api::reading::{
-    add_reading, get_latest_reading, get_past_hour_readings, get_past_minutes_readings,
-    get_readings_between,
+    add_reading, get_average_reading, get_latest_reading, get_past_hour_readings,
+    get_past_minutes_readings, get_readings_between,
 };
 use auspex::api::station::{add_station, get_station, update_location, update_station};
 use auspex::{config::Config, repository::db::DBRepository};
@@ -30,6 +30,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_station)
             .service(update_location)
             .service(get_latest_reading)
+            .service(get_average_reading)
             .service(get_past_hour_readings)
             .service(get_past_minutes_readings)
             .service(get_readings_between)

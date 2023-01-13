@@ -46,6 +46,22 @@ pub async fn get_latest_reading(
     }
 }
 
+#[get("/reading/{station_token}/average")]
+pub async fn get_average_reading(
+    db: Data<DBRepository>,
+    station_token: Path<String>,
+) -> HttpResponse {
+    let service = ReadingService::new(db);
+    let token = station_token.into_inner();
+    let result = service.get_average_reading(token).await;
+
+    if result.is_ok() {
+        HttpResponse::Ok().json(result.unwrap())
+    } else {
+        HttpResponse::InternalServerError().finish()
+    }
+}
+
 #[get("/reading/{station_token}/between/{start}/{end}")]
 pub async fn get_readings_between(
     db: Data<DBRepository>,

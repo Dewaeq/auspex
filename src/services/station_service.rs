@@ -16,7 +16,7 @@ impl StationService {
     }
 
     pub async fn get_station(&self, token: String) -> Result<Station> {
-        self.db.get_station(token).await
+        self.db.get_station(token, true).await
     }
 
     pub async fn put_station(&self, station: Station) -> Result<i32> {
@@ -28,7 +28,7 @@ impl StationService {
         token: String,
         request: UpdateStationRequest,
     ) -> Result<()> {
-        let mut station = self.db.get_station(token).await?;
+        let mut station = self.db.get_station(token, false).await?;
         station.apply_update(request);
 
         self.db.update_station(&station).await
