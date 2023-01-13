@@ -51,14 +51,32 @@ impl Query {
     }
 
     pub async fn get_average_reading(&self, station_id: i32) -> Result<AverageReading> {
-        let hour_readings = self.get_past_hour_readings(1).await?;
-        let day_readings = self.get_past_hour_readings(24).await?;
+        let hour_readings = self.get_past_hour_readings(station_id, 1).await?;
+        let day_readings = self.get_past_hour_readings(station_id, 24).await?;
         let rec = AverageReading::new(hour_readings, day_readings);
 
         Ok(rec)
     }
 
-    pub async fn get_past_hour_readings(&self, hours: i64) -> Result<Vec<Reading>> {
+    async fn get_past_hour_readings(&self, station_id: i32, hours: i64) -> Result<Vec<Reading>> {
+        let date = Utc::now() - Duration::hours(hours);
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE station_id = $1
+        AND date >= $2
+        "#,
+            station_id,
+            date
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
+    pub async fn get_all_past_hour_readings(&self, hours: i64) -> Result<Vec<Reading>> {
         let date = Utc::now() - Duration::hours(hours);
         let rec = sqlx::query_as!(
             Reading,
@@ -74,7 +92,7 @@ impl Query {
         Ok(rec)
     }
 
-    pub async fn get_past_minutes_readings(&self, minutes: i64) -> Result<Vec<Reading>> {
+    pub async fn get_all_past_minutes_readings(&self, minutes: i64) -> Result<Vec<Reading>> {
         let date = Utc::now() - Duration::minutes(minutes);
         let rec = sqlx::query_as!(
             Reading,
@@ -86,7 +104,7 @@ impl Query {
             GROUP BY station_id
         )    
         "#,
-        date
+            date
         )
         .fetch_all(&self.pool)
         .await?;
