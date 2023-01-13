@@ -80,11 +80,13 @@ impl Query {
             Reading,
             r#"
         SELECT * FROM readings
-        WHERE (date, station_id) IN (
+        WHERE date >= $1
+        AND (date, station_id) IN (
             SELECT MAX(date), station_id FROM readings
             GROUP BY station_id
         )    
-        "#
+        "#,
+        date
         )
         .fetch_all(&self.pool)
         .await?;
