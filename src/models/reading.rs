@@ -1,6 +1,6 @@
 use std::iter::Sum;
 
-use chrono::{serde::ts_seconds, DateTime, Utc};
+use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::api::reading::AddReadingRequest;
@@ -10,7 +10,7 @@ pub struct Reading {
     pub id: i32,
     pub station_id: i32,
     pub location_id: Option<i32>,
-    #[serde(with = "ts_seconds")]
+    #[serde(with = "ts_milliseconds")]
     pub date: DateTime<Utc>,
     pub temperature: f32,
     pub humidity: f32,

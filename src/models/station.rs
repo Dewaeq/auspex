@@ -1,4 +1,4 @@
-use chrono::{serde::ts_seconds, DateTime, Utc};
+use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -18,7 +18,7 @@ pub struct Station {
     pub sw_version: i32,
     pub location_id: Option<i32>,
     pub location: Option<Location>,
-    #[serde(with = "ts_seconds")]
+    #[serde(with = "ts_milliseconds")]
     pub last_online: DateTime<Utc>,
 }
 

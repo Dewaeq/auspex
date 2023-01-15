@@ -3,7 +3,7 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse,
 };
-use chrono::{serde::ts_seconds, serde::ts_seconds_option, DateTime, Utc};
+use chrono::{serde::ts_milliseconds, serde::ts_milliseconds_option, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{repository::db::DBRepository, services::reading_service::ReadingService};
@@ -11,7 +11,7 @@ use crate::{repository::db::DBRepository, services::reading_service::ReadingServ
 #[derive(Serialize, Deserialize)]
 pub struct AddReadingRequest {
     pub station_token: String,
-    #[serde(with = "ts_seconds_option")]
+    #[serde(with = "ts_milliseconds_option")]
     pub date: Option<DateTime<Utc>>,
     pub temperature: f32,
     pub humidity: f32,
@@ -24,9 +24,9 @@ pub struct AddReadingRequest {
 #[derive(Serialize, Deserialize)]
 pub struct ReadingsBetweenRequest {
     station_token: String,
-    #[serde(with = "ts_seconds")]
+    #[serde(with = "ts_milliseconds")]
     start: DateTime<Utc>,
-    #[serde(with = "ts_seconds")]
+    #[serde(with = "ts_milliseconds")]
     end: DateTime<Utc>,
 }
 
