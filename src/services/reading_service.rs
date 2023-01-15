@@ -32,6 +32,11 @@ impl ReadingService {
         self.db.get_latest_reading(station).await
     }
 
+    pub async fn get_latest_readings(&self, token: String, count: i64) -> Result<Vec<Reading>> {
+        let station = self.db.get_station(token, false).await?;
+        self.db.get_latest_readings(station, count).await
+    }
+
     pub async fn get_average_reading(&self, token: String) -> Result<AverageReading> {
         let station = self.db.get_station(token, false).await?;
         self.db.get_average_reading(station).await

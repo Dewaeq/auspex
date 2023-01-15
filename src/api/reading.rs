@@ -46,6 +46,19 @@ pub async fn get_latest_reading(
     }
 }
 
+#[get("/reading/{station_token}/latest/{count}")]
+pub async fn get_latest_readings(db: Data<DBRepository>, params: Path<(String, i64)>) -> HttpResponse {
+    let service = ReadingService::new(db);
+    let (token, count) = params.into_inner();
+    let result = service.get_latest_readings(token, count).await;
+
+    if result.is_ok() {
+        HttpResponse::Ok().json(result.unwrap())
+    } else {
+        HttpResponse::NoContent().finish()
+    }
+}
+
 #[get("/reading/{station_token}/average")]
 pub async fn get_average_reading(
     db: Data<DBRepository>,

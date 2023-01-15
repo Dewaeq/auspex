@@ -95,6 +95,16 @@ impl DBRepository {
         Ok(rec)
     }
 
+    pub async fn get_latest_readings(
+        &self,
+        station: Station,
+        count: i64,
+    ) -> Result<Vec<Reading>> {
+        let rec = self.query.get_latest_readings(station.id, count).await?;
+
+        Ok(rec)
+    }
+
     pub async fn get_average_reading(&self, station: Station) -> Result<AverageReading> {
         let rec = self.query.get_average_reading(station.id).await?;
 
@@ -108,7 +118,10 @@ impl DBRepository {
     }
 
     pub async fn get_past_minutes_readings(&self, minutes: impl Into<i64>) -> Result<Vec<Reading>> {
-        let rec = self.query.get_all_past_minutes_readings(minutes.into()).await?;
+        let rec = self
+            .query
+            .get_all_past_minutes_readings(minutes.into())
+            .await?;
 
         Ok(rec)
     }

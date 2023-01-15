@@ -50,6 +50,24 @@ impl Query {
         Ok(rec)
     }
 
+    pub async fn get_latest_readings(&self, station_id: i32, count: i64) -> Result<Vec<Reading>> {
+        let rec = sqlx::query_as!(
+            Reading,
+            r#"
+        SELECT * FROM readings
+        WHERE station_id = $1
+        ORDER BY date DESC
+        LIMIT $2
+        "#,
+            station_id,
+            count
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
     pub async fn get_average_reading(&self, station_id: i32) -> Result<AverageReading> {
         let hour_readings = self.get_past_hour_readings(station_id, 1).await?;
         let day_readings = self.get_past_hour_readings(station_id, 24).await?;
