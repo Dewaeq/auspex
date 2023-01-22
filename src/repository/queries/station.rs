@@ -32,6 +32,20 @@ impl Query {
         Ok(rec)
     }
 
+    pub async fn get_active_stations(&self) -> Result<Vec<StationRecord>> {
+        let rec = sqlx::query_as!(
+            StationRecord,
+            r#"
+        SELECT * FROM stations
+        WHERE last_online >= NOW() - INTERVAL '1 HOUR'
+        "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rec)
+    }
+
     pub async fn put_station(&self, station: Station) -> Result<PutStationRecord> {
         let rec = sqlx::query_as!(
             PutStationRecord,

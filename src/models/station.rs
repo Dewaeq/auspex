@@ -75,12 +75,12 @@ impl From<AddStationRequest> for Station {
     }
 }
 
-impl From<StationRecord> for Station {
-    fn from(rec: StationRecord) -> Self {
+impl From<&StationRecord> for Station {
+    fn from(rec: &StationRecord) -> Self {
         Station {
             id: rec.id,
-            uid: rec.uid,
-            token: rec.token,
+            uid: rec.uid.clone(),
+            token: rec.token.clone(),
             hw_version: rec.hw_version,
             sw_version: rec.sw_version,
             location_id: rec.location_id,

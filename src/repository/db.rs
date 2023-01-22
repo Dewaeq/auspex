@@ -8,6 +8,7 @@ use crate::{
 };
 use anyhow::Result;
 use chrono::{serde::ts_seconds, DateTime, Duration, Utc};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
@@ -29,15 +30,33 @@ impl DBRepository {
     pub async fn get_station(&self, token: String, include_location: bool) -> Result<Station> {
         let rec = self.query.get_station(token).await?;
 
-        let location = match rec.location_id {
-            Some(id) if include_location => Some(self.get_location(id).await?),
-            _ => None,
-        };
-
-        let mut station = Station::from(rec);
-        station.location = location;
+        let mut station = Station::from(&rec);
+        if include_location {
+            station.location = self.location_or_none(rec.location_id).await;
+        }
 
         Ok(station)
+    }
+
+    pub async fn get_active_stations(&self) -> Result<Vec<Station>> {
+        let records = self.query.get_active_stations().await?;
+        let mut result = vec![];
+
+        for rec in records {
+            let mut station = Station::from(&rec);
+            station.location = self.location_or_none(rec.location_id).await;
+
+            result.push(station)
+        }
+
+        Ok(result)
+    }
+
+    async fn location_or_none(&self, location_id: Option<i32>) -> Option<Location> {
+        match location_id {
+            Some(id) => self.get_location(id).await.ok(),
+            _ => None,
+        }
     }
 
     pub async fn put_station(&self, mut station: Station) -> Result<i32> {
@@ -95,11 +114,7 @@ impl DBRepository {
         Ok(rec)
     }
 
-    pub async fn get_latest_readings(
-        &self,
-        station: Station,
-        count: i64,
-    ) -> Result<Vec<Reading>> {
+    pub async fn get_latest_readings(&self, station: Station, count: i64) -> Result<Vec<Reading>> {
         let rec = self.query.get_latest_readings(station.id, count).await?;
 
         Ok(rec)

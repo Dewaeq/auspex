@@ -19,6 +19,10 @@ impl StationService {
         self.db.get_station(token, true).await
     }
 
+    pub async fn get_active_stations(&self) -> Result<Vec<Station>> {
+        self.db.get_active_stations().await
+    }
+
     pub async fn put_station(&self, station: Station) -> Result<i32> {
         self.db.put_station(station).await
     }

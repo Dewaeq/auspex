@@ -50,6 +50,18 @@ pub async fn get_station(db: Data<DBRepository>, station_token: Path<String>) ->
     }
 }
 
+#[get("/station/all/active")]
+pub async fn get_active_stations(db: Data<DBRepository>) -> HttpResponse {
+    let service = StationService::new(db);
+    let result = service.get_active_stations().await;
+
+    if result.is_ok() {
+        HttpResponse::Ok().json(result.unwrap())
+    } else {
+        HttpResponse::NoContent().finish()
+    }
+}
+
 #[put("/station/{station_token}/register")]
 pub async fn add_station(db: Data<DBRepository>, body: Json<AddStationRequest>) -> HttpResponse {
     let service = StationService::new(db);

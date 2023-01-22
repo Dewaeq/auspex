@@ -4,7 +4,7 @@ use auspex::api::reading::{
     add_reading, get_average_reading, get_latest_reading, get_latest_readings,
     get_past_hour_readings, get_past_minutes_readings, get_readings_between,
 };
-use auspex::api::station::{add_station, get_station, update_location, update_station};
+use auspex::api::station::{add_station, get_station, update_location, update_station, get_active_stations};
 use auspex::{config::Config, repository::db::DBRepository};
 
 #[actix_web::main]
@@ -27,6 +27,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(db_data)
             .service(add_station)
             .service(get_station)
+            .service(get_active_stations)
             .service(update_station)
             .service(update_location)
             .service(get_latest_reading)
