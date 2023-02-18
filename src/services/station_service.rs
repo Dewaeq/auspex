@@ -6,12 +6,12 @@ use crate::{
 use actix_web::web::Data;
 use anyhow::Result;
 
-pub struct StationService {
-    db: Data<DBRepository>,
+pub struct StationService<'a> {
+    db: &'a Data<DBRepository>,
 }
 
-impl StationService {
-    pub fn new(db: Data<DBRepository>) -> Self {
+impl<'a> StationService<'a> {
+    pub fn new(db: &'a Data<DBRepository>) -> Self {
         StationService { db }
     }
 

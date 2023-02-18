@@ -8,12 +8,12 @@ use crate::{
     repository::db::DBRepository,
 };
 
-pub struct ReadingService {
-    db: Data<DBRepository>,
+pub struct ReadingService<'a> {
+    db: &'a Data<DBRepository>,
 }
 
-impl ReadingService {
-    pub fn new(db: Data<DBRepository>) -> Self {
+impl<'a> ReadingService<'a> {
+    pub fn new(db: &'a Data<DBRepository>) -> Self {
         ReadingService { db }
     }
 
