@@ -1,6 +1,6 @@
 use crate::{
-    repository::db::DBRepository,
-    services::station_service::StationService, models::station::Station,
+    models::reading::Reading, models::station::Station, repository::db::DBRepository,
+    services::reading_service::ReadingService, services::station_service::StationService,
 };
 use actix_web::{
     get, post, put,
@@ -9,6 +9,12 @@ use actix_web::{
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+pub struct GetStationResponse {
+    pub station: Station,
+    pub last_reading: Option<Reading>,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct AddStationRequest {
@@ -37,14 +43,40 @@ pub struct UpdateStationRequest {
     pub last_online: Option<DateTime<Utc>>,
 }
 
+async fn create_station_response(db: &Data<DBRepository>, station: Station) -> GetStationResponse {
+    let service = ReadingService::new(&db);
+    let last_reading = service.get_latest_reading(station.token.clone()).await.ok();
+
+    GetStationResponse {
+        station,
+        last_reading,
+    }
+}
+
+async fn create_station_responses(
+    db: Data<DBRepository>,
+    stations: Vec<Station>,
+) -> Vec<GetStationResponse> {
+    let service = ReadingService::new(&db);
+    let mut result = Vec::with_capacity(stations.len());
+
+    for station in stations.into_iter() {
+        let res = create_station_response(&db, station).await;
+        result.push(res)
+    }
+
+    result
+}
+
 #[get("/station/{station_token}")]
 pub async fn get_station(db: Data<DBRepository>, station_token: Path<String>) -> HttpResponse {
-    let service = StationService::new(db);
+    let service = StationService::new(&db);
     let token = station_token.into_inner();
     let station = service.get_station(token).await;
 
-    if station.is_ok() {
-        HttpResponse::Ok().json(station.unwrap())
+    if let Ok(station) = station {
+        let res = create_station_response(&db, station).await;
+        HttpResponse::Ok().json(res)
     } else {
         HttpResponse::NotFound().finish()
     }
@@ -52,11 +84,12 @@ pub async fn get_station(db: Data<DBRepository>, station_token: Path<String>) ->
 
 #[get("/station/all/active")]
 pub async fn get_active_stations(db: Data<DBRepository>) -> HttpResponse {
-    let service = StationService::new(db);
+    let service = StationService::new(&db);
     let result = service.get_active_stations().await;
 
-    if result.is_ok() {
-        HttpResponse::Ok().json(result.unwrap())
+    if let Ok(stations) = result {
+        let res = create_station_responses(db, stations).await;
+        HttpResponse::Ok().json(res)
     } else {
         HttpResponse::NoContent().finish()
     }
@@ -64,13 +97,13 @@ pub async fn get_active_stations(db: Data<DBRepository>) -> HttpResponse {
 
 #[put("/station/{station_token}/register")]
 pub async fn add_station(db: Data<DBRepository>, body: Json<AddStationRequest>) -> HttpResponse {
-    let service = StationService::new(db);
+    let service = StationService::new(&db);
     let request = body.into_inner();
     let station = Station::from(request);
     let id = service.put_station(station).await;
 
-    if id.is_ok() {
-        HttpResponse::Ok().json(id.unwrap())
+    if let Ok(id) = id {
+        HttpResponse::Ok().json(id)
     } else {
         HttpResponse::InternalServerError().finish()
     }
@@ -82,7 +115,7 @@ pub async fn update_station(
     station_token: Path<String>,
     body: Json<UpdateStationRequest>,
 ) -> HttpResponse {
-    let service = StationService::new(db);
+    let service = StationService::new(&db);
     let token = station_token.into_inner();
     let request = body.into_inner();
     let result = service.update_station(token, request).await;
@@ -99,7 +132,7 @@ pub async fn update_location(
     db: Data<DBRepository>,
     body: Json<AddLocationRequest>,
 ) -> HttpResponse {
-    let service = StationService::new(db);
+    let service = StationService::new(&db);
     let request = body.into_inner();
     let result = service.update_location(request).await;
 
